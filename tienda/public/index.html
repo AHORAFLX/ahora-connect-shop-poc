@@ -1,0 +1,328 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Connect Shop · tienda demo de AHORA Connect</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Montserrat:wght@600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/estilos.css">
+</head>
+<body>
+<div id="demoBanner" style="display:none;background:#ffd84d;color:#3d2e00;padding:10px 16px;text-align:center;font-weight:600">
+  ⚠️ MODO DEMO: no hay conexión con ningún ERP. Artículos, clientes, pedidos y facturas son datos simulados en memoria.
+  Para usar AHORA Connect real, arranca con <code>node --env-file=.env server.mjs</code>.
+</div>
+<header>
+  <div class="bar">
+    <div class="logo">Connect <span>Shop</span></div>
+    <div class="pill" style="background:rgba(40,194,255,.18)">powered by <b style="color:var(--ahora-cyan)">AHORA Connect</b></div>
+    <div class="pill"><span class="dot"></span><span id="erpInfo">Conectando con AHORA ERP…</span></div>
+    <nav>
+      <button class="on" data-tab="tienda">Tienda</button>
+      <button data-tab="cuenta">Mi cuenta</button>
+      <a href="/gestion">Gestión</a>
+    </nav>
+  </div>
+  <div class="hero">
+    <h1>Tienda online integrada con AHORA ERP</h1>
+    <p>El catálogo sale del ERP. Al comprar, el cliente, el pedido, el albarán y la factura se generan en AHORA a través de AHORA Connect.</p>
+  </div>
+</header>
+
+<main>
+  <section id="tienda">
+    <div class="shop">
+      <div class="grid" id="catalogo"><div class="empty">Cargando catálogo desde el ERP…</div></div>
+      <aside>
+        <div class="panel">
+          <h2>Carrito <span id="nCarrito" class="ref"></span></h2>
+          <div id="carrito"></div>
+          <div class="totals" id="totales"></div>
+        </div>
+        <form class="panel" id="checkout">
+          <h2>Tus datos</h2>
+          <label for="idCliente">Cliente</label>
+          <select id="idCliente" name="idCliente">
+            <option value="">➕ Nuevo cliente (se da de alta en el ERP)</option>
+          </select>
+          <div id="nuevoCliente">
+          <label for="nombre">Nombre o razón social</label>
+          <input data-lpignore="true" data-1p-ignore data-bwignore autocomplete="off" id="nombre" name="nombre" value="Distribuciones Levante S.L." required>
+          <div class="two">
+            <div><label for="nif">NIF</label><input data-lpignore="true" data-1p-ignore data-bwignore autocomplete="off" id="nif" name="nif" value="B98765432"></div>
+            <div><label for="cp">Código postal</label><input data-lpignore="true" data-1p-ignore data-bwignore autocomplete="off" id="cp" name="cp" value="46001"></div>
+          </div>
+          <label for="direccion">Dirección</label>
+          <input data-lpignore="true" data-1p-ignore data-bwignore autocomplete="off" id="direccion" name="direccion" value="Av. del Puerto 12">
+          <div class="two">
+            <div><label for="correo">Correo electrónico</label><input data-lpignore="true" data-1p-ignore data-bwignore autocomplete="off" id="correo" name="correo" type="text" inputmode="email" value="compras@levante.es"></div>
+            <div><label for="telefono">Teléfono</label><input data-lpignore="true" data-1p-ignore data-bwignore autocomplete="off" id="telefono" name="telefono" value="961000000"></div>
+          </div>
+          </div>
+          <div style="margin-top:16px"><button class="btn big" id="comprar" disabled>Finalizar compra</button></div>
+        </form>
+      </aside>
+    </div>
+
+    <section id="erp">
+      <div class="erp-head">
+        <h2>Qué ha pasado en AHORA ERP</h2>
+        <p>Cada paso es una llamada de tu backend a AHORA Connect.</p>
+      </div>
+      <div class="steps" id="steps"></div>
+      <div class="result" id="result"></div>
+      <div class="term">
+        <div class="term-head"><i></i><i></i><i></i><span style="margin-left:8px">Llamadas a la API · haz clic en una para ver el detalle</span></div>
+        <div id="log"></div>
+      </div>
+    </section>
+  </section>
+
+  <section id="cuenta">
+    <div class="panel">
+      <h2>Mis facturas <span class="ref">ACO_Factura_Venta_Cliente</span></h2>
+      <form class="search" id="buscar">
+        <input data-lpignore="true" data-1p-ignore data-bwignore autocomplete="off" id="clienteCuenta" placeholder="Código de cliente">
+        <button class="btn">Consultar</button>
+      </form>
+      <div id="facturas" class="empty">Introduce tu código de cliente. Si acabas de comprar, ya está relleno.</div>
+    </div>
+  </section>
+</main>
+<div class="toast" id="toast"></div>
+
+<script>
+const $ = (s) => document.querySelector(s);
+const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const eur = (n) => n.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' });
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const toast = (t) => { $('#toast').textContent = t; $('#toast').classList.add('show'); setTimeout(() => $('#toast').classList.remove('show'), 1800); };
+
+// Aspecto por familia (solo decorativo)
+const estilos = {
+  ART: ['💍', '#fff4e0'], COL: ['💄', '#ffe8ef'], TAL: ['👕', '#e7f0ff'], TALCO: ['👗', '#f4ecff'],   // familias de la instalación de pruebas
+  TEX: ['👕', '#e7f0ff'], ACC: ['🎒', '#fff1e3'], HOG: ['☕', '#e8f7ef'], PAP: ['📓', '#f4ecff'],     // modo demo
+};
+const estilo = (a) => estilos[a?.IdFamilia] ?? ['📦', '#eef1f5'];
+// AHORA Connect no expone tarifas: en una tienda real el precio viene de tu catálogo web
+const precio = (id) => [...id].reduce((h, c) => h + c.charCodeAt(0), 0) % 9 * 5 + 9.95;
+
+// Clientes existentes del ERP. Con uno elegido no hace falta el formulario de alta
+fetch('/api/clientes').then((r) => r.json()).then((cs) => {
+  if (cs.error) throw new Error(cs.error);
+  $('#idCliente').insertAdjacentHTML('beforeend', `<optgroup label="Clientes en AHORA ERP (${cs.length})">${cs.map((c) =>
+    `<option value="${esc(c.IdCliente)}">${esc(c.Cliente)} · ${esc(c.IdCliente)}</option>`).join('')}</optgroup>`);
+}).catch((e) => toast('No se pudieron leer los clientes: ' + e.message));
+$('#idCliente').addEventListener('change', () => {
+  const nuevo = !$('#idCliente').value;
+  $('#nuevoCliente').style.display = nuevo ? '' : 'none';
+  $('#nombre').required = nuevo;
+});
+
+// carrito: clave (artículo + propiedades) -> { id, props, texto, cant }
+let articulos = [], carrito = {};
+const variantes = {};   // IdArticulo -> { campos, combinaciones } leídos del ERP
+
+fetch('/api/info').then((r) => r.json()).then((i) => {
+  $('#erpInfo').textContent = i.demo ? 'SIMULADO · sin ERP' : `Conectado a AHORA Connect · ${new URL(i.erp).host}`;
+  if (i.demo) {
+    $('#demoBanner').style.display = 'block';
+    document.querySelector('.dot').style.background = '#ffd84d';
+    $('.hero p').textContent = 'Simulación: muestra el flujo que haría la integración real (catálogo → cliente → pedido → albarán → factura) sin conectar con ningún ERP.';
+    $('#erp h2').textContent = 'Qué pasaría en AHORA ERP (simulado)';
+  }
+});
+
+fetch('/api/articulos').then((r) => r.json()).then((arts) => {
+  if (arts.error) throw new Error(arts.error);
+  articulos = arts;
+  $('#catalogo').innerHTML = arts.map((a) => {
+    const [ic, bg] = estilo(a);
+    const id = esc(a.IdArticulo);
+    return `<article class="card" data-card="${id}">
+      <div class="thumb" style="background:${bg}">${ic}</div>
+      <div class="body">
+        <span class="chip">${esc(a.IdFamilia_flxtext ?? a.IdFamilia)}</span>
+        <h3>${esc(a.Descrip)}</h3>
+        <span class="ref mono">${id}${a.IdDefProd ? ` · ${esc(a.IdDefProd_flxtext ?? a.IdDefProd)}` : ''}</span>
+        <div class="opts"></div>
+        <div class="row"><span class="price">${eur(precio(a.IdArticulo))}</span>
+          ${a.IdDefProd
+            ? `<button class="btn ghost" data-opc="${id}">Elegir opciones</button>`
+            : `<button class="btn" data-add="${id}" aria-label="Añadir ${esc(a.Descrip)}">Añadir</button>`}</div>
+      </div></article>`;
+  }).join('') || '<div class="empty">El ERP no devolvió artículos de venta.</div>';
+  pintarCarrito();
+}).catch((e) => { $('#catalogo').innerHTML = `<div class="empty" style="color:var(--err)">No se pudo leer el catálogo: ${esc(e.message)}</div>`; });
+
+// Selects encadenados: cada propiedad solo ofrece valores que forman combinación válida con las anteriores
+function pintarOpciones(id, elegidas = {}) {
+  const card = document.querySelector(`[data-card="${CSS.escape(id)}"]`);
+  const { campos, combinaciones } = variantes[id];
+  if (!combinaciones.length) { card.querySelector('.opts').innerHTML = '<span class="ref" style="color:var(--err)">Sin combinaciones dadas de alta en el ERP</span>'; return; }
+  let html = '', previas = {};
+  for (const { campo, etiqueta } of campos) {
+    const valores = [...new Set(combinaciones.filter((c) => Object.entries(previas).every(([k, v]) => c[k] === v)).map((c) => c[campo]))];
+    const actual = valores.includes(elegidas[campo]) ? elegidas[campo] : valores[0];
+    previas[campo] = actual;
+    html += `<label>${esc(etiqueta)}<select data-prop="${esc(campo)}" data-art="${esc(id)}">${valores.map((v) =>
+      `<option ${v === actual ? 'selected' : ''}>${esc(v)}</option>`).join('')}</select></label>`;
+  }
+  card.querySelector('.opts').innerHTML = html;
+  const opc = card.querySelector('[data-opc]');   // solo la primera vez: el botón pasa a ser "Añadir"
+  if (opc) opc.outerHTML = `<button class="btn" data-addv="${esc(id)}">Añadir</button>`;
+}
+const opcionesElegidas = (id) => Object.fromEntries([...document.querySelectorAll(`select[data-art="${CSS.escape(id)}"]`)].map((s) => [s.dataset.prop, s.value]));
+
+document.addEventListener('change', (ev) => {
+  const s = ev.target.closest('select[data-art]');
+  if (s) pintarOpciones(s.dataset.art, opcionesElegidas(s.dataset.art));
+});
+
+function añadir(id, props = {}) {
+  const { campos = [] } = variantes[id] ?? {};
+  const texto = campos.map(({ campo, etiqueta }) => `${etiqueta} ${props[campo]}`).join(' · ');
+  const clave = id + '|' + JSON.stringify(props);
+  carrito[clave] ??= { id, props, texto, cant: 0 };
+  carrito[clave].cant++;
+  toast('Añadido al carrito');
+}
+
+document.addEventListener('click', async (ev) => {
+  const add = ev.target.closest('[data-add]'), addv = ev.target.closest('[data-addv]'), opc = ev.target.closest('[data-opc]');
+  const mas = ev.target.closest('[data-mas]'), menos = ev.target.closest('[data-menos]');
+  if (opc) {
+    const a = articulos.find((x) => x.IdArticulo === opc.dataset.opc);
+    opc.disabled = true; opc.textContent = 'Leyendo del ERP…';
+    const v = await fetch(`/api/variantes?articulo=${encodeURIComponent(a.IdArticulo)}&def=${encodeURIComponent(a.IdDefProd)}`).then((r) => r.json());
+    if (v.error) { opc.textContent = 'Error'; toast(v.error); return; }
+    variantes[a.IdArticulo] = v;
+    pintarOpciones(a.IdArticulo);
+  }
+  if (add) añadir(add.dataset.add);
+  if (addv) añadir(addv.dataset.addv, opcionesElegidas(addv.dataset.addv));
+  if (mas) carrito[mas.dataset.mas].cant++;
+  if (menos && --carrito[menos.dataset.menos].cant <= 0) delete carrito[menos.dataset.menos];
+  if (add || addv || mas || menos) pintarCarrito();
+  const tab = ev.target.closest('[data-tab]');
+  if (tab) {
+    document.querySelectorAll('nav button').forEach((b) => b.classList.toggle('on', b === tab));
+    $('#tienda').style.display = tab.dataset.tab === 'tienda' ? '' : 'none';
+    $('#cuenta').style.display = tab.dataset.tab === 'cuenta' ? 'block' : 'none';
+  }
+});
+
+function pintarCarrito() {
+  const items = Object.entries(carrito);
+  const base = items.reduce((s, [, l]) => s + l.cant * precio(l.id), 0);
+  $('#nCarrito').textContent = items.length ? `${items.reduce((s, [, l]) => s + l.cant, 0)} uds.` : '';
+  $('#carrito').innerHTML = items.length ? items.map(([clave, l]) => {
+    const a = articulos.find((x) => x.IdArticulo === l.id);
+    return `<div class="line"><span>${estilo(a)[0]}</span><span class="n">${esc(a?.Descrip ?? l.id)}${l.texto ? `<br><small class="ref">${esc(l.texto)}</small>` : ''}</span>
+      <span class="qty"><button type="button" data-menos="${esc(clave)}" aria-label="Quitar uno">−</button>${l.cant}<button type="button" data-mas="${esc(clave)}" aria-label="Añadir uno">+</button></span></div>`;
+  }).join('') : '<div class="empty">Tu carrito está vacío</div>';
+  $('#totales').innerHTML = items.length ? `<div><span>Base imponible</span><span>${eur(base)}</span></div>
+    <div><span>IVA 21%</span><span>${eur(base * .21)}</span></div><div class="t"><span>Total</span><span>${eur(base * 1.21)}</span></div>` : '';
+  $('#comprar').disabled = !items.length;
+}
+
+// Pasos del flujo y cómo reconocer cada llamada de la traza
+const PASOS = [
+  ['cliente', '👤', 'Cliente', (p) => p.startsWith('/object/ACO_Cliente')],
+  ['contacto', '📇', 'Contacto', (p) => p.includes('/ACO_Contacto_Facturacion')],
+  ['pedido', '🧾', 'Pedido', (p) => p === '/object/ACO_Pedido_Cliente'],
+  ['lineas', '📦', 'Líneas', (p) => p.startsWith('/object/ACO_Pedido_Cliente_Linea')],
+  ['albaran', '🚚', 'Albarán', (p) => p.includes('_Albaranear/')],
+  ['actualizar', '✅', 'Actualizar albarán', (p) => p.includes('_Albaranes_Actualizar/')],
+  ['marcar', '🏷️', 'Marcar para facturar', (p) => p.includes('_Lineas_MarcarFactura/')],
+  ['factura', '💶', 'Factura', (p) => p.includes('_Facturar/')],
+];
+const paso = (k) => $(`#step-${k}`);
+
+$('#checkout').addEventListener('submit', async (ev) => {
+  ev.preventDefault();
+  const lineas = Object.values(carrito).map((l) => ({ idArticulo: l.id, cantidad: l.cant, precio: precio(l.id), propiedades: l.props }));
+  const { correo, ...resto } = Object.fromEntries(new FormData(ev.target));
+  const cliente = { ...resto, email: correo };   // 'correo' en el HTML: con 'email' los gestores de contraseñas meten su icono
+  $('#comprar').disabled = true; $('#comprar').textContent = 'Procesando en AHORA ERP…';
+  $('#erp').classList.add('show'); $('#result').className = 'result'; $('#log').innerHTML = '';
+  $('#steps').innerHTML = PASOS.map(([k, ic, t]) => `<div class="step" id="step-${k}"><div class="ic">${ic}</div><b>${t}</b><small></small></div>`).join('');
+  if (cliente.idCliente) { paso('cliente').classList.add('skip'); paso('cliente').querySelector('small').textContent = `existente ${cliente.idCliente}`; }
+  $('#erp').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  paso(cliente.idCliente ? 'contacto' : 'cliente').classList.add('active');
+
+  // Cada llamada al ERP llega en cuanto termina (NDJSON) y se pinta en directo
+  let nLineas = 0, nMarcadas = 0, r = { ok: false, error: 'Sin respuesta del servidor' };
+  const mostrar = (t) => {
+    const def = PASOS.find(([, , , f]) => f(t.path));
+    const el = def && paso(def[0]);
+    $('#log').insertAdjacentHTML('beforeend', `<details class="call"><summary class="mono">
+      <span class="m ${t.method}">${t.method}</span><span class="path">/webapi${esc(t.path)}</span>
+      <span class="st ${t.status < 400 ? 'ok' : 'ko'}">${t.status}</span></summary>
+      <pre class="mono">${t.body !== undefined ? `<span class="k">// body</span>\n${esc(JSON.stringify(t.body, null, 2))}\n\n` : ''}<span class="k">// respuesta</span>\n${esc(JSON.stringify(t.response, null, 2))}</pre></details>`);
+    $('#log').lastElementChild.scrollIntoView({ behavior: 'smooth', block: 'nearest' });   // seguir el flujo
+    if (!el) return;
+    const ok = t.status < 400;
+    el.classList.remove('active'); el.classList.add(ok ? 'done' : 'error');
+    const small = el.querySelector('small');
+    const v = (c) => t.response?.Properties?.[c]?.Value;
+    if (!ok) small.textContent = 'error';
+    else if (def[0] === 'cliente') small.textContent = v('IdCliente');
+    else if (def[0] === 'contacto') small.textContent = t.method === 'POST' ? `nuevo #${v('IdContacto')}` : t.response?.[0] ? `#${t.response[0].IdContacto}` : 'creando…';
+    else if (def[0] === 'pedido') small.textContent = `nº ${v('IdPedido')}`;
+    else if (def[0] === 'lineas') small.textContent = `${++nLineas} de ${lineas.length}`;
+    else if (def[0] === 'marcar') small.textContent = `${++nMarcadas} de ${lineas.length}`;
+    else small.textContent = '✓ generado';
+    // el siguiente paso queda "en curso" mientras el ERP trabaja
+    const sig = ok && PASOS[PASOS.findIndex(([k]) => k === def[0]) + 1];
+    if (sig && !(def[0] === 'lineas' && nLineas < lineas.length) && !(def[0] === 'marcar' && nMarcadas < lineas.length)) paso(sig[0]).classList.add('active');
+  };
+  try {
+    const resp = await fetch('/api/checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ cliente, lineas }) });
+    const lector = resp.body.pipeThrough(new TextDecoderStream()).getReader();
+    let resto = '';
+    for (;;) {
+      const { value, done } = await lector.read();
+      if (done) break;
+      const trozos = (resto + value).split('\n'); resto = trozos.pop();
+      for (const l of trozos.filter(Boolean)) { const m = JSON.parse(l); if (m.paso) mostrar(m.paso); if (m.fin) r = m.fin; }
+    }
+  } catch (e) { r = { ok: false, error: e.message }; }
+  document.querySelectorAll('.step.active').forEach((s) => s.classList.remove('active'));
+
+  const res = $('#result');
+  if (r.ok) {
+    res.className = 'result ok';
+    res.innerHTML = `<span class="big">✅</span><div><b>Compra registrada en AHORA ERP</b><br>Pedido albaranado y facturado sin intervención manual.</div>
+      <div class="docs"><div class="doc">Cliente<b>${esc(r.idCliente)}</b></div><div class="doc">Pedido<b>${esc(r.idPedido)}</b></div><div class="doc">Estado<b>Facturado</b></div></div>`;
+    carrito = {}; pintarCarrito();
+    $('#clienteCuenta').value = r.idCliente;
+    if (!cliente.idCliente) {   // cliente recién dado de alta: queda seleccionable
+      $('#idCliente').insertAdjacentHTML('beforeend', `<option value="${esc(r.idCliente)}">${esc(cliente.nombre)} · ${esc(r.idCliente)}</option>`);
+      $('#idCliente').value = r.idCliente; $('#idCliente').dispatchEvent(new Event('change'));
+    }
+  } else {
+    res.className = 'result ko';
+    res.innerHTML = `<span class="big">⚠️</span><div><b>El ERP ha rechazado la operación</b><br>${esc(r.error)}${r.idPedido ? `<br><small>El pedido ${esc(r.idPedido)} ya está creado en el ERP: se puede reintentar solo el paso que falló.</small>` : ''}</div>`;
+  }
+  res.scrollIntoView({ behavior: 'smooth', block: 'center' });   // mostrar cómo ha terminado
+  $('#comprar').textContent = 'Finalizar compra'; $('#comprar').disabled = !Object.keys(carrito).length;
+});
+
+$('#buscar').addEventListener('submit', async (ev) => {
+  ev.preventDefault();
+  const id = $('#clienteCuenta').value.trim();
+  if (!id) return;
+  $('#facturas').textContent = 'Consultando el ERP…';
+  const fs = await fetch('/api/facturas?cliente=' + encodeURIComponent(id)).then((r) => r.json());
+  if (fs.error) { $('#facturas').innerHTML = `<span style="color:var(--err)">${esc(fs.error)}</span>`; return; }
+  $('#facturas').className = '';
+  $('#facturas').innerHTML = fs.length ? `<table><tr><th>Factura</th><th>Fecha</th><th>Estado</th><th>Total</th></tr>${fs.map((f) =>
+    `<tr><td class="mono">${esc(f.NumFactCliente ?? f.IdFactura)}</td><td>${esc(String(f.FechaFact ?? '').slice(0, 10))}</td>
+     <td><span class="chip">${esc(f.IdEstado_flxtext ?? f.IdEstado ?? '')}</span></td><td>${f.Total != null ? eur(f.Total) : '—'}</td></tr>`).join('')}</table>`
+    : '<div class="empty">Este cliente no tiene facturas.</div>';
+});
+</script>
+</body>
+</html>

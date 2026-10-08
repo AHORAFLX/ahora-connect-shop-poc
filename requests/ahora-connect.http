@@ -1,0 +1,128 @@
+# Llamadas de ejemplo a AHORA Connect.
+# Se abren con la extensión "REST Client" de VS Code o con JetBrains HTTP Client.
+# Los valores (empresa, serie, artículos...) son de ejemplo: ajústalos a tu instalación.
+
+@base = https://connect.miempresa.com
+@user = usuario_api
+@password = cambiar
+
+### 1. Login (OAuth2 password grant) → access_token
+# @name login
+POST {{base}}/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=password&username={{user}}&password={{password}}
+
+###
+@token = {{login.response.body.access_token}}
+
+### 2. Listado paginado + filtro (cláusula WHERE SQL, URL-encoded): artículos activos
+GET {{base}}/webapi/list/ACO_Articulo?pageSize=20&filter=VACO_Articulos.Estado%3D0
+Authorization: Bearer {{token}}
+Accept: application/json
+
+### 0. Especificación Swagger completa de la instalación (no requiere token)
+GET {{base}}/webapi
+
+### 3. Un registro por id (objetos con clave simple)
+GET {{base}}/webapi/object/ACO_Cliente/00001
+Authorization: Bearer {{token}}
+Accept: application/json
+
+### 4. Alta de cliente (el ERP asigna IdCliente; lo devuelve en Properties.IdCliente.Value)
+POST {{base}}/webapi/object/ACO_Cliente
+Authorization: Bearer {{token}}
+Accept: application/json
+Content-Type: application/json
+
+{
+  "IdEmpresa": 1,
+  "IdCliente": null,
+  "Cliente": "Cliente Web S.L.",
+  "RazonSocial": "Cliente Web S.L.",
+  "Nif": "B12345678",
+  "IdTipo": 0,
+  "IdPais": "ES",
+  "Direccion": "C/ Mayor 1",
+  "CodPostal": "28001",
+  "E_Mail": "compras@clienteweb.es",
+  "NumTelefono": "600000000",
+  "IdImpuestoIndirecto": 1,
+  "IdIva": 1,
+  "Cliente_Contado": false,
+  "Bloqueado": false
+}
+
+### 5. Contactos del cliente (el pedido necesita IdContacto)
+GET {{base}}/webapi/list/ACO_Contacto_Facturacion?filter=VACO_Clientes_Contactos.IdCliente%3D%2700001%27
+Authorization: Bearer {{token}}
+Accept: application/json
+
+### 6. Cabecera de pedido → Properties.IdPedido.Value
+POST {{base}}/webapi/object/ACO_Pedido_Cliente
+Authorization: Bearer {{token}}
+Accept: application/json
+Content-Type: application/json
+
+{
+  "IdEmpresa": 1,
+  "SeriePedido": 1,
+  "Fecha": "2026-10-08",
+  "IdCliente": "00001",
+  "IdContacto": 1,
+  "IdMoneda": 1,
+  "DescripcionPed": "Pedido tienda online",
+  "IdPedidoCli": "WEB-1001",
+  "Bloqueado": false
+}
+
+### 7. Línea de pedido (una llamada por línea)
+POST {{base}}/webapi/object/ACO_Pedido_Cliente_Linea
+Authorization: Bearer {{token}}
+Accept: application/json
+Content-Type: application/json
+
+{
+  "IdPedido": 123,
+  "IdArticulo": "ART001",
+  "IdAlmacen": 0,
+  "Cantidad": 2,
+  "Precio_EURO": 19.95
+}
+
+### 8. Proceso de negocio: albaranear el pedido (body obligatorio, aunque sea {})
+POST {{base}}/webapi/exec/pACO_Pedidos_Cliente_Albaranear/ACO_Pedido_Cliente/123
+Authorization: Bearer {{token}}
+Accept: application/json
+Content-Type: application/json
+
+{}
+
+### 8b. Proceso de negocio: actualizar el albarán (necesario antes de facturar)
+POST {{base}}/webapi/exec/pACO_Pedidos_Cliente_Albaranes_Actualizar/ACO_Pedido_Cliente/123
+Authorization: Bearer {{token}}
+Accept: application/json
+Content-Type: application/json
+
+{}
+
+### 9. Proceso de negocio: facturar el pedido
+POST {{base}}/webapi/exec/pACO_Pedidos_Cliente_Facturar/ACO_Pedido_Cliente/123
+Authorization: Bearer {{token}}
+Accept: application/json
+Content-Type: application/json
+
+{}
+
+### 10. Facturas del cliente (para "Mi cuenta" en la web)
+GET {{base}}/webapi/list/ACO_Factura_Venta_Cliente?filter=VACO_Facturas_Venta_Cliente.IdCliente%3D%2700001%27
+Authorization: Bearer {{token}}
+Accept: application/json
+
+### 11. Error de validación: el ERP responde HTTP 500 con el mensaje en el body
+POST {{base}}/webapi/object/ACO_Pedido_Cliente
+Authorization: Bearer {{token}}
+Accept: application/json
+Content-Type: application/json
+
+{ "IdEmpresa": 1, "SeriePedido": 1, "IdCliente": "NOEXISTE", "IdContacto": 1, "IdMoneda": 1 }

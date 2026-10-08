@@ -1,0 +1,504 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gestión · Connect Shop</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Montserrat:wght@600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/estilos.css">
+<style>
+  .gest { display: grid; grid-template-columns: minmax(0, 1fr) 400px; gap: 20px; max-width: 1560px; margin: 0 auto; padding: 20px 16px 64px; align-items: start; }
+  .calls { position: sticky; top: 16px; max-height: calc(100vh - 32px); overflow: auto; }
+  .calls .term { min-height: 260px; }
+  .ms { color: #7f93ab; font-size: 11px; }
+  .tabs { display: flex; gap: 8px; margin-bottom: 18px; flex-wrap: wrap; }
+  .tab { border: 0; background: var(--card); box-shadow: var(--shadow); border-radius: 12px; padding: 12px 18px; font-weight: 600; color: var(--muted); font-family: Montserrat, Inter, sans-serif; }
+  .tab.on { background: var(--ahora-navy); color: #fff; }
+  .tool { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 14px; }
+  .tool input, .tool select { flex: 1; min-width: 200px; }
+  .tool .btn { flex: 0 0 auto; }
+  select { padding: 9px 11px; border: 1px solid var(--line); border-radius: 9px; font: inherit; background: #fff; width: 100%; }
+  .chips { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
+  .fchip { border: 1px solid var(--line); background: #fff; border-radius: 99px; padding: 6px 12px; font-size: 13px; color: var(--muted); }
+  .fchip.on { background: var(--ahora-cyan); border-color: var(--ahora-cyan); color: var(--ahora-navy); font-weight: 600; }
+  .lista { display: flex; flex-direction: column; gap: 8px; }
+  .fila { display: grid; grid-template-columns: 70px 1fr auto auto; gap: 14px; align-items: center; background: var(--card); border-radius: 12px; box-shadow: var(--shadow); padding: 12px 16px; cursor: pointer; border: 2px solid transparent; }
+  .fila:hover { border-color: var(--ahora-cyan); }
+  .fila .num { font-family: Montserrat, Inter, sans-serif; font-weight: 800; font-size: 18px; color: var(--ahora-navy); }
+  .fila .sub { font-size: 12px; color: var(--muted); }
+  .est { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .3px; padding: 4px 10px; border-radius: 99px; white-space: nowrap; background: #eef1f5; color: var(--muted); }
+  .est.e0 { background: #fff4e0; color: #8a5a00; } .est.e3, .est.e5 { background: #e6f7ff; color: #035a80; }
+  .est.e6 { background: #efe8ff; color: #4b2a99; } .est.e7, .est.e8, .est.ok { background: #e8f7ef; color: #0d5c38; } .est.ko { background: #fbe9ef; color: #7a1f40; }
+  .tarjetas { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; }
+  .tcard { background: var(--card); border-radius: var(--r); box-shadow: var(--shadow); overflow: hidden; cursor: pointer; border: 2px solid transparent; display: flex; flex-direction: column; }
+  .tcard:hover { border-color: var(--ahora-cyan); }
+  .tcard .thumb { aspect-ratio: 16/9; font-size: 44px; }
+  .tcard .body { padding: 12px 14px; display: flex; flex-direction: column; gap: 4px; }
+  .tcard h3 { margin: 0; font-size: 14px; }
+  .avatar { width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; color: #fff; background: var(--ahora-navy); font-family: Montserrat, sans-serif; }
+  .cli { display: flex; gap: 12px; align-items: center; padding: 14px; }
+  .det .cab { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; margin-bottom: 16px; }
+  .det .cab h2 { margin: 0; font-size: 24px; }
+  .volver { background: none; border: 0; color: var(--ahora-navy); font-weight: 600; padding: 0; margin-bottom: 12px; }
+  .datos { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px; margin-bottom: 18px; }
+  .dato { background: #f6f8fc; border-radius: 10px; padding: 10px 12px; }
+  .dato small { display: block; font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .3px; }
+  .dato b { font-size: 15px; }
+  .pipe { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin: 6px 0 18px; }
+  .pipe div { text-align: center; padding: 10px 6px; border-radius: 10px; background: #eef1f5; color: var(--muted); font-size: 12px; font-weight: 600; }
+  .pipe div.hecho { background: var(--ok); color: #fff; }
+  .pipe div.ahora { background: var(--ahora-cyan); color: var(--ahora-navy); }
+  .accion { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; background: #f6f8fc; border-radius: 12px; padding: 14px; margin-bottom: 18px; }
+  .accion .btn { padding: 12px 18px; }
+  .accion .btn.mag { background: var(--ahora-magenta); }
+  .msg { padding: 10px 14px; border-radius: 10px; font-size: 14px; display: none; white-space: pre-wrap; margin-bottom: 14px; }
+  .msg.ok { display: block; background: #e8f7ef; color: #0d5c38; }
+  .msg.ko { display: block; background: #fbe9ef; color: #7a1f40; }
+  .msg.info { display: block; background: #e6f7ff; color: #035a80; }
+  table.t td, table.t th { font-size: 13px; }
+  .form { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 0 14px; }
+  .form label { margin-top: 10px; }
+  .seccion { font-family: Montserrat, sans-serif; font-weight: 700; margin: 22px 0 6px; font-size: 15px; color: var(--ahora-navy); }
+  .combos { display: flex; gap: 6px; flex-wrap: wrap; }
+  .combos span { font-size: 12px; background: #eef1f5; border-radius: 6px; padding: 3px 8px; }
+  .vacio { color: var(--muted); padding: 30px; text-align: center; background: var(--card); border-radius: 12px; }
+  @media (max-width: 1100px) { .gest { grid-template-columns: 1fr; } .calls { position: static; max-height: none; } }
+  @media (max-width: 600px) { .fila { grid-template-columns: 1fr auto; } .fila .num { grid-row: span 2; } .pipe { grid-template-columns: repeat(2, 1fr); } }
+</style>
+</head>
+<body>
+<header>
+  <div class="bar">
+    <div class="logo">Connect <span>Shop</span></div>
+    <div class="pill" style="background:rgba(40,194,255,.18)">powered by <b style="color:var(--ahora-cyan)">AHORA Connect</b></div>
+    <div class="pill"><span class="dot"></span><span id="erpInfo">Conectando…</span></div>
+    <nav><a href="/">Tienda</a><a class="on" href="/gestion">Gestión</a></nav>
+  </div>
+  <div class="hero">
+    <h1>Gestión de la tienda</h1>
+    <p>El back-office de la tienda trabaja directamente sobre AHORA ERP: pedidos, clientes, artículos y facturas. A la derecha, cada llamada a AHORA Connect.</p>
+  </div>
+</header>
+
+<div class="gest">
+  <main style="margin:0;max-width:none;padding:0">
+    <div class="tabs">
+      <button class="tab on" data-sec="pedidos">🧾 Pedidos</button>
+      <button class="tab" data-sec="clientes">👥 Clientes</button>
+      <button class="tab" data-sec="articulos">🏷️ Artículos</button>
+      <button class="tab" data-sec="facturas">💶 Facturas</button>
+    </div>
+    <div id="msg" class="msg"></div>
+    <div id="vista"></div>
+  </main>
+  <aside class="calls">
+    <div class="term">
+      <div class="term-head"><i></i><i></i><i></i><span style="margin-left:8px;flex:1">Llamadas a AHORA Connect · clic para ver el detalle</span>
+        <button class="btn ghost" id="limpiar" style="padding:4px 10px;font-size:12px">Limpiar</button></div>
+      <div id="log"></div>
+    </div>
+  </aside>
+</div>
+
+<script>
+const $ = (s) => document.querySelector(s);
+const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const enc = encodeURIComponent;
+const eur = (n) => n == null ? '—' : Number(n).toLocaleString('es-ES', { style: 'currency', currency: 'EUR' });
+const fecha = (d) => d ? new Date(d).toLocaleDateString('es-ES') : '—';
+const hoy = () => new Date().toISOString().slice(0, 10);
+const sql = (v) => `'${String(v).replaceAll("'", "''")}'`;
+const filtro = (w) => `filter=${enc(w)}`;
+const errMsg = (d) => typeof d === 'string' ? d : d?.InnerException?.Message ?? d?.Message ?? d?.ExceptionMessage ?? JSON.stringify(d)?.slice(0, 300);
+const msg = (tipo, t) => { $('#msg').className = `msg ${tipo}`; $('#msg').textContent = t; if (tipo) $('#msg').scrollIntoView({ block: 'nearest', behavior: 'smooth' }); };
+const iniciales = (n) => String(n ?? '?').split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join('').toUpperCase();
+const color = (s) => `hsl(${[...String(s)].reduce((h, c) => h + c.charCodeAt(0), 0) % 360} 55% 38%)`;
+const estilosFamilia = { ART: ['💍', '#fff4e0'], COL: ['💄', '#ffe8ef'], TAL: ['👕', '#e7f0ff'], TALCO: ['👗', '#f4ecff'], LOT: ['📦', '#e8f7ef'] };
+
+// Toda llamada al ERP pasa por el backend (/api/connect) y se muestra en el panel derecho
+async function api(method, path, body) {
+  const r = await fetch('/api/connect', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ method, path, body }) })
+    .then((x) => x.json()).catch((e) => ({ status: 0, data: e.message }));
+  $('#log').insertAdjacentHTML('afterbegin', `<details class="call"><summary class="mono">
+    <span class="m ${method}">${method}</span><span class="path">/webapi${esc(path)}</span>
+    <span class="st ${r.status < 400 ? 'ok' : 'ko'}">${r.status}</span><span class="ms">${r.ms ?? '-'} ms</span></summary>
+    <pre class="mono">${body !== undefined ? `<span class="k">// body</span>\n${esc(JSON.stringify(body, null, 2))}\n\n` : ''}<span class="k">// respuesta</span>\n${esc(JSON.stringify(r.data, null, 2)?.slice(0, 20000))}</pre></details>`);
+  if (r.status >= 400) throw new Error(errMsg(r.data));
+  return r.data;
+}
+// Lee un registro completo y devuelve sus valores (para un PUT hay que reenviar todo el registro)
+const leer = async (obj, id) => Object.fromEntries(Object.entries((await api('GET', `/object/${obj}/${enc(id)}`)).Properties)
+  .filter(([k]) => !/^separator|^RELATED$/.test(k)).map(([k, p]) => [k, p.Value]));
+$('#limpiar').onclick = () => { $('#log').innerHTML = ''; };
+
+let cfg = {};
+fetch('/api/info').then((r) => r.json()).then((i) => {
+  cfg = i.config ?? {};
+  $('#erpInfo').textContent = i.demo ? 'SIMULADO · sin ERP' : `Conectado a AHORA Connect · ${new URL(i.erp).host}`;
+  if (i.demo) msg('ko', 'La gestión necesita un AHORA Connect real: arranca con node --env-file=.env server.mjs');
+});
+
+// Navegación entre secciones (y "ir a" desde una sección a otra)
+// ir('pedidos', 67) abre directamente el detalle; sin argumento, el listado
+const SECCIONES = { pedidos: (id) => id ? verPedido(id) : listarPedidos(), clientes: listarClientes, articulos: listarArticulos, facturas: listarFacturas };
+function ir(sec, ...args) {
+  document.querySelectorAll('.tab').forEach((t) => t.classList.toggle('on', t.dataset.sec === sec));
+  msg('', '');
+  SECCIONES[sec](...args);
+}
+document.querySelector('.tabs').onclick = (ev) => { const t = ev.target.closest('[data-sec]'); if (t) ir(t.dataset.sec); };
+const cargando = (t = 'Consultando AHORA ERP…') => { $('#vista').innerHTML = `<div class="vacio">${t}</div>`; };
+const fallo = (e) => { $('#vista').innerHTML = ''; msg('ko', e.message); };
+
+// =====================================================================
+// PEDIDOS
+// =====================================================================
+// Estados de línea: 0 pendiente · 3 albarán · 5 albarán actualizado · 6 para facturar · 7 factura · 8 factura actualizada
+const FASES = ['Pedido', 'Albarán', 'Albarán actualizado', 'Listo para facturar', 'Facturado'];
+const fase = (e) => e >= 7 ? 4 : ({ 0: 0, 1: 0, 2: 3, 3: 1, 4: 3, 5: 2, 6: 3 })[e] ?? 0;
+
+async function listarPedidos(q = '') {
+  cargando();
+  try {
+    let ruta = `/list/ACO_Pedido_Cliente?pageSize=60&orderBy=${enc('VACO_Pedidos_Cliente.IdPedido desc')}`;
+    if (q) ruta += '&' + filtro(/^\d+$/.test(q) ? `VACO_Pedidos_Cliente.IdPedido=${q}` : `VACO_Pedidos_Cliente.IdCliente like ${sql('%' + q + '%')}`);
+    const ps = await api('GET', ruta);
+    $('#vista').innerHTML = `<div class="tool"><input data-lpignore="true" data-1p-ignore data-bwignore autocomplete="off" id="qPed" placeholder="Nº de pedido o código de cliente" value="${esc(q)}">
+        <button class="btn" id="bPed">Buscar</button><a class="btn ghost" href="/" style="text-decoration:none">+ Nuevo pedido en la tienda</a></div>
+      <div class="lista">${ps.map((p) => `<div class="fila" data-ped="${p.IdPedido}">
+        <span class="num">#${p.IdPedido}</span>
+        <div><b>${esc(p.IdCliente_flxtext ?? p.IdCliente)}</b><div class="sub">${fecha(p.Fecha)} · ${esc(p.SeriePedido_flxtext ?? '')} ${p.NumPedido ?? ''}${p.IdPedidoCli ? ` · ref. web ${esc(p.IdPedidoCli)}` : ''}</div></div>
+        <span class="sub">${esc(p.DescripcionPed ?? '')}</span>
+        <span class="est">${esc(p.IdEstado_flxtext ?? p.IdEstado)}</span></div>`).join('') || '<div class="vacio">No hay pedidos</div>'}</div>`;
+    $('#bPed').onclick = () => listarPedidos($('#qPed').value.trim());
+    $('#qPed').onkeydown = (e) => { if (e.key === 'Enter') listarPedidos($('#qPed').value.trim()); };
+    $('#vista').querySelector('.lista').onclick = (ev) => { const f = ev.target.closest('[data-ped]'); if (f) verPedido(+f.dataset.ped); };
+  } catch (e) { fallo(e); }
+}
+
+async function verPedido(id) {
+  cargando();
+  try {
+    const p = (await api('GET', `/object/ACO_Pedido_Cliente/${id}`)).Properties;
+    const lineas = await api('GET', `/list/ACO_Pedido_Cliente_Linea?pageSize=200&${filtro(`VACO_Pedidos_Cliente_Lineas.IdPedido=${id}`)}`);
+    const f = lineas.length ? Math.min(...lineas.map((l) => fase(l.IdEstado))) : 0;
+    const est = (e) => lineas.filter((l) => l.IdEstado === e);
+    const total = lineas.reduce((s, l) => s + (l.Total_Euros ?? l.Cantidad * l.Precio_EURO), 0);
+    const facturas = [...new Set(lineas.map((l) => l.IdFactura).filter(Boolean))];
+    // Siguiente paso según el estado de las líneas
+    const siguiente =
+      est(0).length || est(1).length ? ['Generar albarán', () => api('POST', `/exec/pACO_Pedidos_Cliente_Albaranear/ACO_Pedido_Cliente/${id}`, {})]
+      : est(3).length ? ['Actualizar albarán', () => api('POST', `/exec/pACO_Pedidos_Cliente_Albaranes_Actualizar/ACO_Pedido_Cliente/${id}`, {})]
+      : est(5).length ? ['Marcar para facturar', async () => { for (const l of est(5)) await api('POST', `/exec/pACO_Pedidos_Cliente_Lineas_MarcarFactura/ACO_Pedido_Cliente_Linea?${filtro(`VACO_Pedidos_Cliente_Lineas.IdPedido=${id} and VACO_Pedidos_Cliente_Lineas.IdLinea=${l.IdLinea}`)}`, {}); }]
+      : est(2).length || est(4).length || est(6).length ? ['Facturar', () => api('POST', `/exec/pACO_Pedidos_Cliente_Facturar/ACO_Pedido_Cliente/${id}`, {})]
+      : null;
+    const props = (l) => Array.from({ length: 10 }, (_, i) => l[`P${i + 1}`]).filter((v) => v != null && v !== '').join(' · ');
+    $('#vista').innerHTML = `<div class="panel det">
+      <button class="volver" id="volver">‹ Pedidos</button>
+      <div class="cab"><h2>Pedido #${id}</h2><span class="est">${esc(p.IdEstado?.Text)}</span></div>
+      <div class="datos">
+        <div class="dato"><small>Cliente</small><b><a href="#" id="irCli">${esc(p.IdCliente?.Text)}</a></b></div>
+        <div class="dato"><small>Fecha</small><b>${fecha(p.Fecha?.Value)}</b></div>
+        <div class="dato"><small>Serie y número</small><b>${esc(p.SeriePedido?.Text)} ${esc(p.NumPedido?.Value)}</b></div>
+        <div class="dato"><small>Ref. web</small><b>${esc(p.IdPedidoCli?.Value ?? '—')}</b></div>
+        <div class="dato"><small>Importe (base)</small><b>${eur(total)}</b></div>
+      </div>
+      <div class="pipe">${FASES.map((n, i) => `<div class="${i < f || (i === 4 && f === 4) ? 'hecho' : i === f ? 'ahora' : ''}">${n}</div>`).join('')}</div>
+      <div class="accion">${siguiente ? `<button class="btn mag" id="sig">${siguiente[0]} →</button><button class="btn" id="todo">Completar hasta factura ⚡</button>
+        <span class="sub">Cada botón ejecuta un proceso de negocio de AHORA ERP.</span>`
+        : `<b>✅ Pedido facturado</b>${facturas.map((x) => `<button class="btn ghost" data-fac="${x}">Ver factura ${x}</button>`).join('')}`}</div>
+      <table class="t"><tr><th>Línea</th><th>Artículo</th><th>Variante</th><th>Cant.</th><th>Precio</th><th>Importe</th><th>Estado</th><th>Albarán</th><th>Factura</th></tr>
+      ${lineas.map((l) => `<tr><td>${l.IdLinea}</td><td><b>${esc(l.Descrip ?? l.IdArticulo_flxtext ?? l.IdArticulo)}</b><div class="sub mono">${esc(l.IdArticulo)}</div></td>
+        <td>${esc(props(l))}</td><td>${l.Cantidad}</td><td>${eur(l.Precio_EURO)}</td><td>${eur(l.Total_Euros)}</td>
+        <td><span class="est e${l.IdEstado}">${esc(l.IdEstado_flxtext ?? l.IdEstado)}</span></td><td>${l.IdAlbaran ?? ''}</td><td>${l.IdFactura ?? ''}</td></tr>`).join('')}</table></div>`;
+    $('#volver').onclick = () => listarPedidos();
+    $('#irCli').onclick = (e) => { e.preventDefault(); ir('clientes', p.IdCliente?.Value); };
+    $('#vista').querySelectorAll('[data-fac]').forEach((b) => { b.onclick = () => ir('facturas', +b.dataset.fac); });
+    if (siguiente) {
+      $('#sig').onclick = () => paso(id, siguiente);
+      $('#todo').onclick = async () => {   // repite "siguiente paso" hasta que el pedido quede facturado
+        for (let n = 0; n < 5; n++) {
+          const ls = await api('GET', `/list/ACO_Pedido_Cliente_Linea?pageSize=200&${filtro(`VACO_Pedidos_Cliente_Lineas.IdPedido=${id}`)}`);
+          if (ls.every((l) => l.IdEstado >= 7)) break;
+          const e = (x) => ls.filter((l) => l.IdEstado === x);
+          try {
+            if (e(0).length || e(1).length) await api('POST', `/exec/pACO_Pedidos_Cliente_Albaranear/ACO_Pedido_Cliente/${id}`, {});
+            else if (e(3).length) await api('POST', `/exec/pACO_Pedidos_Cliente_Albaranes_Actualizar/ACO_Pedido_Cliente/${id}`, {});
+            else if (e(5).length) for (const l of e(5)) await api('POST', `/exec/pACO_Pedidos_Cliente_Lineas_MarcarFactura/ACO_Pedido_Cliente_Linea?${filtro(`VACO_Pedidos_Cliente_Lineas.IdPedido=${id} and VACO_Pedidos_Cliente_Lineas.IdLinea=${l.IdLinea}`)}`, {});
+            else await api('POST', `/exec/pACO_Pedidos_Cliente_Facturar/ACO_Pedido_Cliente/${id}`, {});
+          } catch (err) { await verPedido(id); return msg('ko', err.message); }
+        }
+        await verPedido(id); msg('ok', 'Pedido completado hasta factura en AHORA ERP');
+      };
+    }
+  } catch (e) { fallo(e); }
+}
+async function paso(id, [nombre, fn]) {
+  try { await fn(); await verPedido(id); msg('ok', `${nombre}: hecho en AHORA ERP`); }
+  catch (e) { await verPedido(id); msg('ko', `${nombre}: ${e.message}`); }
+}
+
+// =====================================================================
+// CLIENTES
+// =====================================================================
+async function listarClientes(abrir) {
+  if (abrir) return verCliente(abrir);
+  cargando();
+  try {
+    const cs = await api('GET', `/list/ACO_Cliente?pageSize=200&orderBy=${enc('VACO_Clientes_Datos.Cliente')}`);
+    const pintar = (q) => {
+      const v = cs.filter((c) => `${c.Cliente} ${c.RazonSocial} ${c.IdCliente} ${c.Nif}`.toLowerCase().includes(q.toLowerCase()));
+      $('#cards').innerHTML = v.map((c) => `<div class="tcard" data-cli="${esc(c.IdCliente)}"><div class="cli">
+        <div class="avatar" style="background:${color(c.IdCliente)}">${esc(iniciales(c.Cliente))}</div>
+        <div style="min-width:0"><h3>${esc(c.Cliente)}</h3><div class="sub mono">${esc(c.IdCliente)} · ${esc(c.Nif ?? 'sin NIF')}</div>
+        <div class="sub">${esc(c.E_Mail ?? '')}</div></div></div>
+        <div class="body" style="padding-top:0">${c.Bloqueado ? '<span class="est ko">Bloqueado</span>' : '<span class="est ok">Activo</span>'}</div></div>`).join('') || '<div class="vacio">Sin resultados</div>';
+    };
+    $('#vista').innerHTML = `<div class="tool"><input data-lpignore="true" data-1p-ignore data-bwignore autocomplete="off" id="qCli" placeholder="Buscar por nombre, código o NIF">
+      <button class="btn" id="nuevoCli">+ Nuevo cliente</button></div><div class="tarjetas" id="cards"></div>`;
+    pintar('');
+    $('#qCli').oninput = () => pintar($('#qCli').value);
+    $('#nuevoCli').onclick = () => fichaCliente(null);
+    $('#cards').onclick = (ev) => { const c = ev.target.closest('[data-cli]'); if (c) verCliente(c.dataset.cli); };
+  } catch (e) { fallo(e); }
+}
+
+// Los campos de correo no se llaman 'email' en el HTML: Passbolt y otros gestores de contraseñas les inyectan su icono
+const campo = (k) => k === 'E_Mail' ? 'Correo' : k;
+const CAMPOS_CLIENTE = [['Cliente', 'Nombre comercial'], ['RazonSocial', 'Razón social'], ['Nif', 'NIF'], ['Direccion', 'Dirección'],
+  ['CodPostal', 'Código postal'], ['E_Mail', 'Correo electrónico'], ['NumTelefono', 'Teléfono'], ['Web', 'Web']];
+
+async function verCliente(id) {
+  cargando();
+  try {
+    const v = await leer('ACO_Cliente', id);
+    const contactos = await api('GET', `/list/ACO_Contacto_Facturacion?pageSize=50&${filtro(`VACO_Clientes_Contactos.IdCliente=${sql(id)}`)}`);
+    const pedidos = await api('GET', `/list/ACO_Pedido_Cliente?pageSize=20&orderBy=${enc('VACO_Pedidos_Cliente.IdPedido desc')}&${filtro(`VACO_Pedidos_Cliente.IdCliente=${sql(id)}`)}`);
+    const facturas = await api('GET', `/list/ACO_Factura_Venta_Cliente?pageSize=20&orderBy=${enc('VACO_Facturas_Venta_Cliente.IdFactura desc')}&${filtro(`VACO_Facturas_Venta_Cliente.IdCliente=${sql(id)}`)}`);
+    fichaCliente(v, contactos, pedidos, facturas);
+  } catch (e) { fallo(e); }
+}
+
+function fichaCliente(v, contactos = [], pedidos = [], facturas = []) {
+  const nuevo = !v; v ??= {};
+  $('#vista').innerHTML = `<div class="panel det">
+    <button class="volver" id="volver">‹ Clientes</button>
+    <div class="cab"><div class="avatar" style="background:${color(v.IdCliente ?? 'x')}">${esc(iniciales(v.Cliente ?? '+'))}</div>
+      <h2>${nuevo ? 'Nuevo cliente' : esc(v.Cliente)}</h2>${nuevo ? '' : `<span class="ref mono">${esc(v.IdCliente)}</span>`}</div>
+    <form id="fCli" novalidate autocomplete="off"><div class="form">${CAMPOS_CLIENTE.map(([k, l]) => `<div><label for="c_${campo(k)}">${l}${['Cliente', 'RazonSocial', 'Nif'].includes(k) ? ' <b style="color:var(--accent)">*</b>' : ''}</label>
+      <input data-lpignore="true" data-1p-ignore data-bwignore autocomplete="off" id="c_${campo(k)}" name="${campo(k)}" ${k === 'E_Mail' ? 'inputmode="email"' : ''} value="${esc(v[k] ?? '')}"></div>`).join('')}
+      <div><label for="c_Bloqueado">Estado</label><select id="c_Bloqueado" name="Bloqueado"><option value="0">Activo</option><option value="1" ${v.Bloqueado ? 'selected' : ''}>Bloqueado</option></select></div></div>
+      <div class="acciones" style="margin-top:16px"><button class="btn">${nuevo ? 'Dar de alta en el ERP' : 'Guardar cambios'}</button></div></form>
+    ${nuevo ? '' : `
+    <div class="seccion">Contactos (${contactos.length})</div>
+    <table class="t"><tr><th>#</th><th>Nombre</th><th>NIF</th><th>Email</th><th>Teléfono</th></tr>
+      ${contactos.map((c) => `<tr><td>${c.IdContacto}</td><td>${esc(c.Nombre)}</td><td>${esc(c.NIF ?? '')}</td><td>${esc(c.E_Mail ?? '')}</td><td>${esc(c.TelefonoTrabajo ?? c.TelefonoMovil ?? '')}</td></tr>`).join('')}</table>
+    <form id="fCon" class="tool" style="margin-top:10px" novalidate autocomplete="off"><input data-lpignore="true" data-1p-ignore data-bwignore autocomplete="off" name="Nombre" placeholder="Nombre del nuevo contacto" required><input data-lpignore="true" data-1p-ignore data-bwignore autocomplete="off" name="Correo" inputmode="email" placeholder="Correo electrónico">
+      <input data-lpignore="true" data-1p-ignore data-bwignore autocomplete="off" name="TelefonoTrabajo" placeholder="Teléfono"><button class="btn ghost">+ Añadir contacto</button></form>
+    <div class="seccion">Pedidos (${pedidos.length})</div>
+    <div class="lista">${pedidos.map((p) => `<div class="fila" data-ped="${p.IdPedido}"><span class="num">#${p.IdPedido}</span><div>${fecha(p.Fecha)}<div class="sub">${esc(p.IdPedidoCli ?? '')}</div></div><span></span><span class="est">${esc(p.IdEstado_flxtext)}</span></div>`).join('') || '<div class="sub">Sin pedidos</div>'}</div>
+    <div class="seccion">Facturas (${facturas.length})</div>
+    <div class="lista">${facturas.map((f) => `<div class="fila" data-fac="${f.IdFactura}"><span class="num">${f.IdFactura}</span><div>${fecha(f.FechaFact)}<div class="sub">Nº ${esc(f.NumFactCliente)}</div></div><span></span><span class="est">${esc(f.IdEstado_flxtext)}</span></div>`).join('') || '<div class="sub">Sin facturas</div>'}</div>`}</div>`;
+  $('#volver').onclick = () => listarClientes();
+  $('#vista').querySelectorAll('[data-ped]').forEach((x) => { x.onclick = () => ir('pedidos', +x.dataset.ped); });
+  $('#vista').querySelectorAll('[data-fac]').forEach((x) => { x.onclick = () => ir('facturas', +x.dataset.fac); });
+
+  $('#fCli').onsubmit = async (ev) => {
+    ev.preventDefault();
+    const d = Object.fromEntries(new FormData(ev.target));
+    const faltan = ['Cliente', 'RazonSocial', 'Nif'].filter((k) => !d[k]?.trim());
+    if (faltan.length) return msg('ko', `Faltan campos obligatorios: ${faltan.join(', ')}`);
+    const editado = { ...Object.fromEntries(CAMPOS_CLIENTE.map(([k]) => [k, d[campo(k)]?.trim() || null])), Bloqueado: d.Bloqueado === '1' };
+    try {
+      if (nuevo) {
+        const r = await api('POST', '/object/ACO_Cliente', { ...editado, IdCliente: null, IdEmpresa: cfg.idEmpresa, IdTipo: 0, IdPais: 'ES',
+          IdImpuestoIndirecto: cfg.idImpuesto, IdIva: cfg.idIva, Cliente_Contado: false, IdDelegacion: -1, IdContactoF: null });
+        const idNuevo = r.Properties.IdCliente.Value;
+        await verCliente(idNuevo); msg('ok', `Cliente ${idNuevo} dado de alta en AHORA ERP`);
+      } else {
+        await api('PUT', `/object/ACO_Cliente/${enc(v.IdCliente)}`, { ...v, ...editado });   // PUT: el registro completo con los cambios
+        await verCliente(v.IdCliente); msg('ok', 'Cambios guardados en AHORA ERP');
+      }
+    } catch (e) { msg('ko', e.message); }
+  };
+  if (!nuevo) $('#fCon').onsubmit = async (ev) => {
+    ev.preventDefault();
+    const d = Object.fromEntries(new FormData(ev.target));
+    if (!d.Nombre.trim()) return msg('ko', 'El contacto necesita un nombre');
+    try {
+      await api('POST', '/object/ACO_Contacto_Facturacion', { IdContacto: null, IdCliente: v.IdCliente, Nombre: d.Nombre.trim(), NIF: v.Nif,
+        IdPaisContacto: 'ES', E_Mail: d.Correo || null, TelefonoTrabajo: d.TelefonoTrabajo || null });
+      await verCliente(v.IdCliente); msg('ok', 'Contacto añadido en AHORA ERP');
+    } catch (e) { msg('ko', e.message); }
+  };
+}
+
+// =====================================================================
+// ARTÍCULOS
+// =====================================================================
+let familias = [], ivas = [];
+async function maestros() {
+  if (!familias.length) familias = await api('GET', `/list/ACO_Articulo_Familia?pageSize=200`);
+  if (!ivas.length) ivas = await api('GET', `/list/ACO_IVA?pageSize=50`);
+}
+
+async function listarArticulos(abrir) {
+  if (abrir) return verArticulo(abrir);
+  cargando();
+  try {
+    await maestros();
+    const arts = await api('GET', `/list/ACO_Articulo?pageSize=300&orderBy=${enc('VACO_Articulos.IdArticulo')}`);
+    let fam = 'todas', q = '';
+    const pintar = () => {
+      const v = arts.filter((a) => (fam === 'todas' || a.IdFamilia === fam) && `${a.IdArticulo} ${a.Descrip}`.toLowerCase().includes(q));
+      $('#chips').innerHTML = [['todas', 'Todas'], ...familias.map((f) => [f.IdFamilia, f.Descrip])]
+        .map(([k, n]) => `<button class="fchip ${fam === k ? 'on' : ''}" data-fam="${esc(k)}">${esc(n)} <span class="sub">${k === 'todas' ? arts.length : arts.filter((a) => a.IdFamilia === k).length}</span></button>`).join('');
+      $('#cards').innerHTML = v.map((a) => {
+        const [ic, bg] = estilosFamilia[a.IdFamilia] ?? ['🗂️', '#eef1f5'];
+        return `<div class="tcard" data-art="${esc(a.IdArticulo)}"><div class="thumb" style="background:${bg}">${ic}</div><div class="body">
+          <h3>${esc(a.Descrip)}</h3><span class="sub mono">${esc(a.IdArticulo)} · ${esc(a.IdFamilia_flxtext ?? a.IdFamilia)}</span>
+          <div class="combos">${a.Estado ? '<span class="est ko">Anulado</span>' : '<span class="est ok">Activo</span>'}
+          ${a.IdDefProd ? `<span>${esc(a.IdDefProd_flxtext ?? a.IdDefProd)}</span>` : ''}${a.Lotes ? '<span>Lotes</span>' : ''}${a.NSeries ? '<span>Series</span>' : ''}</div></div></div>`;
+      }).join('') || '<div class="vacio">Sin artículos</div>';
+    };
+    $('#vista').innerHTML = `<div class="tool"><input data-lpignore="true" data-1p-ignore data-bwignore autocomplete="off" id="qArt" placeholder="Buscar artículo"><button class="btn" id="nuevoArt">+ Nuevo artículo</button></div>
+      <div class="chips" id="chips"></div><div class="tarjetas" id="cards"></div>`;
+    pintar();
+    $('#qArt').oninput = () => { q = $('#qArt').value.toLowerCase(); pintar(); };
+    $('#chips').onclick = (ev) => { const c = ev.target.closest('[data-fam]'); if (c) { fam = c.dataset.fam; pintar(); } };
+    $('#nuevoArt').onclick = () => fichaArticulo(null);
+    $('#cards').onclick = (ev) => { const c = ev.target.closest('[data-art]'); if (c) verArticulo(c.dataset.art); };
+  } catch (e) { fallo(e); }
+}
+
+async function verArticulo(id) {
+  cargando();
+  try {
+    await maestros();
+    const v = await leer('ACO_Articulo', id);
+    let variantes = null;
+    if (v.IdDefProd) {   // talla, color...: definición (qué campo P es cada propiedad) + combinaciones válidas
+      const def = await api('GET', `/list/ACO_Articulo_DefinicionProd?orderBy=${enc('VACO_Articulos_DefinicionProd.Orden')}&${filtro(`VACO_Articulos_DefinicionProd.IdDefProd=${sql(v.IdDefProd)}`)}`);
+      const combos = await api('GET', `/list/ACO_Articulo_Propiedad?pageSize=1000&${filtro(`VACO_Articulos_Propiedades.IdArticulo=${sql(id)}`)}`);
+      variantes = { def, combos };
+    }
+    fichaArticulo(v, variantes);
+  } catch (e) { fallo(e); }
+}
+
+function fichaArticulo(v, variantes) {
+  const nuevo = !v; v ??= { Estado: 0, IdIva: cfg.idIva };
+  const [ic, bg] = estilosFamilia[v.IdFamilia] ?? ['🗂️', '#eef1f5'];
+  $('#vista').innerHTML = `<div class="panel det">
+    <button class="volver" id="volver">‹ Artículos</button>
+    <div class="cab"><div class="avatar" style="background:${bg};font-size:24px">${ic}</div><h2>${nuevo ? 'Nuevo artículo' : esc(v.Descrip)}</h2>
+      ${nuevo ? '' : `<span class="ref mono">${esc(v.IdArticulo)}</span>`}</div>
+    <form id="fArt" novalidate autocomplete="off"><div class="form">
+      <div><label for="a_IdArticulo">Código <b style="color:var(--accent)">*</b></label><input data-lpignore="true" data-1p-ignore data-bwignore autocomplete="off" id="a_IdArticulo" name="IdArticulo" value="${esc(v.IdArticulo ?? '')}" ${nuevo ? '' : 'readonly'}></div>
+      <div><label for="a_Descrip">Descripción <b style="color:var(--accent)">*</b></label><input data-lpignore="true" data-1p-ignore data-bwignore autocomplete="off" id="a_Descrip" name="Descrip" value="${esc(v.Descrip ?? '')}"></div>
+      <div><label for="a_IdFamilia">Familia</label><select id="a_IdFamilia" name="IdFamilia"><option value="">(sin familia)</option>
+        ${familias.map((f) => `<option value="${esc(f.IdFamilia)}" ${f.IdFamilia === v.IdFamilia ? 'selected' : ''}>${esc(f.Descrip)}</option>`).join('')}</select></div>
+      <div><label for="a_IdIva">IVA</label><select id="a_IdIva" name="IdIva">${ivas.map((i) => `<option value="${i.IdIVA}" ${i.IdIVA === v.IdIva ? 'selected' : ''}>${esc(i.Descrip)}</option>`).join('')}</select></div>
+      <div><label for="a_Estado">Estado</label><select id="a_Estado" name="Estado"><option value="0">Activo</option><option value="1" ${v.Estado ? 'selected' : ''}>Anulado</option></select></div>
+      <div><label for="a_Obs">Observaciones</label><input data-lpignore="true" data-1p-ignore data-bwignore autocomplete="off" id="a_Obs" name="Observaciones" value="${esc(v.Observaciones ?? '')}"></div>
+    </div><div class="acciones" style="margin-top:16px"><button class="btn">${nuevo ? 'Dar de alta en el ERP' : 'Guardar cambios'}</button></div></form>
+    ${variantes ? `<div class="seccion">Variantes: ${variantes.def.map((d) => esc(d.Etiqueta)).join(' × ')} · ${variantes.combos.length} combinaciones</div>
+      <div class="combos">${variantes.combos.slice(0, 60).map((c) => `<span>${variantes.def.map((d) => `${esc(d.Etiqueta)} ${esc(c[d.PropiedadStock])}`).join(' · ')}</span>`).join('')}
+      ${variantes.combos.length > 60 ? `<span>… y ${variantes.combos.length - 60} más</span>` : ''}</div>` : ''}</div>`;
+  $('#volver').onclick = () => listarArticulos();
+  $('#fArt').onsubmit = async (ev) => {
+    ev.preventDefault();
+    const d = Object.fromEntries(new FormData(ev.target));
+    if (!d.IdArticulo?.trim() || !d.Descrip?.trim()) return msg('ko', 'Código y descripción son obligatorios');
+    const editado = { Descrip: d.Descrip.trim(), IdFamilia: d.IdFamilia || null, IdIva: +d.IdIva, Estado: +d.Estado, Observaciones: d.Observaciones || null };
+    try {
+      if (nuevo) {
+        await api('POST', '/object/ACO_Articulo', { IdArticulo: d.IdArticulo.trim(), ...editado, Lotes: false, NSeries: false, NoInventariable: false });
+        await verArticulo(d.IdArticulo.trim()); msg('ok', `Artículo ${d.IdArticulo.trim()} dado de alta en AHORA ERP`);
+      } else {
+        await api('PUT', `/object/ACO_Articulo/${enc(v.IdArticulo)}`, { ...v, ...editado });
+        await verArticulo(v.IdArticulo); msg('ok', 'Cambios guardados en AHORA ERP');
+      }
+    } catch (e) { msg('ko', e.message); }
+  };
+}
+
+// =====================================================================
+// FACTURAS
+// =====================================================================
+async function listarFacturas(abrir) {
+  if (abrir) return verFactura(abrir);
+  cargando();
+  try {
+    const fs = await api('GET', `/list/ACO_Factura_Venta_Cliente?pageSize=60&orderBy=${enc('VACO_Facturas_Venta_Cliente.IdFactura desc')}`);
+    $('#vista').innerHTML = `<div class="lista">${fs.map((f) => `<div class="fila" data-fac="${f.IdFactura}">
+      <span class="num">${f.IdFactura}</span>
+      <div><b>${esc(f.IdCliente_flxtext ?? f.IdCliente)}</b><div class="sub">${fecha(f.FechaFact)} · ${esc(f.SerieFactura_flxtext ?? '')} nº ${esc(f.NumFactCliente)}</div></div>
+      <span class="sub">${esc(f.DescripcionFact ?? '')}</span><span class="est ${/no actualizada/i.test(f.IdEstado_flxtext) ? 'e0' : 'ok'}">${esc(f.IdEstado_flxtext)}</span></div>`).join('') || '<div class="vacio">No hay facturas</div>'}</div>`;
+    $('#vista').querySelector('.lista').onclick = (ev) => { const f = ev.target.closest('[data-fac]'); if (f) verFactura(+f.dataset.fac); };
+  } catch (e) { fallo(e); }
+}
+
+async function verFactura(id) {
+  cargando();
+  try {
+    const f = (await api('GET', `/object/ACO_Factura_Venta_Cliente/${id}`)).Properties;
+    const efectos = await api('GET', `/list/ACO_Factura_Cliente_Efecto?pageSize=50&${filtro(`VACO_Facturas_Cliente_Efectos.IdFactura=${id}`)}`);
+    const lineas = await api('GET', `/list/ACO_Pedido_Cliente_Linea?pageSize=200&${filtro(`VACO_Pedidos_Cliente_Lineas.IdFactura=${id}`)}`);
+    const sinActualizar = /no actualizada/i.test(f.IdEstado?.Text ?? '');
+    const pedidos = [...new Set(lineas.map((l) => l.IdPedido))];
+    $('#vista').innerHTML = `<div class="panel det">
+      <button class="volver" id="volver">‹ Facturas</button>
+      <div class="cab"><h2>Factura ${esc(f.SerieFactura?.Text ?? '')} nº ${esc(f.NumFactCliente?.Value)}</h2><span class="est ${sinActualizar ? 'e0' : 'ok'}">${esc(f.IdEstado?.Text)}</span></div>
+      <div class="datos">
+        <div class="dato"><small>Cliente</small><b><a href="#" id="irCli">${esc(f.IdCliente?.Text)}</a></b></div>
+        <div class="dato"><small>Fecha</small><b>${fecha(f.FechaFact?.Value)}</b></div>
+        <div class="dato"><small>Id. factura</small><b>${id}</b></div>
+        <div class="dato"><small>Pedidos</small><b>${pedidos.map((p) => `<a href="#" data-ped="${p}">#${p}</a>`).join(' ') || '—'}</b></div>
+        <div class="dato"><small>Forma de pago</small><b>${esc(f.FormaPago?.Text ?? '—')}</b></div>
+        <div class="dato"><small>Base imponible</small><b>${eur(lineas.reduce((s, l) => s + (l.Total_Euros ?? 0), 0))}</b></div>
+      </div>
+      <div class="accion">${sinActualizar ? `<button class="btn mag" id="contab">Contabilizar factura →</button><span class="sub">pACO_Facturas_Venta_Actualizar: pasa la factura a actualizada.</span>`
+        : '<b>✅ Factura actualizada</b>'}</div>
+      <div class="seccion">Vencimientos y cobros</div>
+      <table class="t"><tr><th>Efecto</th><th>Tipo</th><th>Vencimiento</th><th>Importe</th><th>Pendiente</th><th>Estado</th><th></th></tr>
+      ${efectos.map((e) => `<tr><td>${e.IdEfecto}</td><td>${esc(e.DescripTipo ?? e.Tipo_flxtext)}</td><td>${fecha(e.FechaVencimiento)}</td><td>${eur(e.ImporteEuros)}</td>
+        <td>${eur(e.PendienteEuros)}</td><td><span class="est ${e.PendienteEuros ? 'e0' : 'ok'}">${esc(e.DescripEstado ?? e.IdEstado_flxtext)}</span></td>
+        <td>${e.PendienteEuros ? `<button class="btn" data-cobrar="${e.IdEfecto}" data-imp="${e.PendienteEuros}">Cobrar</button>` : `<button class="btn ghost" data-deshacer="${e.IdEfecto}">Deshacer cobro</button>`}</td></tr>`).join('')
+        || `<tr><td colspan="7" class="sub">${sinActualizar ? 'Los vencimientos se generan al contabilizar la factura.'
+          : `Sin vencimientos: la forma de pago "${esc(f.FormaPago?.Text)}" no genera efectos en AHORA. Con una forma de pago aplazada (pagaré, recibo...) aparecerían aquí para cobrarlos.`}</td></tr>`}</table>
+      <div class="seccion">Líneas facturadas</div>
+      <table class="t"><tr><th>Pedido</th><th>Artículo</th><th>Cant.</th><th>Precio</th><th>Importe</th></tr>
+      ${lineas.map((l) => `<tr><td>#${l.IdPedido}</td><td>${esc(l.Descrip ?? l.IdArticulo)}</td><td>${l.Cantidad}</td><td>${eur(l.Precio_EURO)}</td><td>${eur(l.Total_Euros)}</td></tr>`).join('')}</table></div>`;
+    $('#volver').onclick = () => listarFacturas();
+    $('#irCli').onclick = (e) => { e.preventDefault(); ir('clientes', f.IdCliente?.Value); };
+    $('#vista').querySelectorAll('[data-ped]').forEach((a) => { a.onclick = (e) => { e.preventDefault(); ir('pedidos', +a.dataset.ped); }; });
+    if (sinActualizar) $('#contab').onclick = async () => {
+      try {
+        // FechaActualizacion es obligatoria: sin ella, "No ha introducido la fecha de actualización"
+        await api('POST', `/exec/pACO_Facturas_Venta_Actualizar/ACO_Factura_Venta_Cliente/${id}`, { IdFactura: id, FechaActualizacion: String(f.FechaFact?.Value).slice(0, 10) });
+        await verFactura(id); msg('ok', 'Factura contabilizada en AHORA ERP');
+      } catch (e) { await verFactura(id); msg('ko', e.message); }
+    };
+    const efectoFiltro = (ef) => filtro(`VACO_Facturas_Cliente_Efectos.IdFactura=${id} and VACO_Facturas_Cliente_Efectos.IdEfecto=${ef}`);
+    $('#vista').querySelectorAll('[data-cobrar]').forEach((b) => { b.onclick = async () => {
+      try {
+        await api('POST', `/exec/pACO_Factura_Cliente_Efecto_Cobrar/ACO_Factura_Cliente_Efecto?${efectoFiltro(b.dataset.cobrar)}`,
+          { IdFactura: id, IdEfecto: +b.dataset.cobrar, ImporteCobro: +b.dataset.imp, FechaCobro: hoy() });
+        await verFactura(id); msg('ok', `Efecto ${b.dataset.cobrar} cobrado en AHORA ERP`);
+      } catch (e) { await verFactura(id); msg('ko', e.message); }
+    }; });
+    $('#vista').querySelectorAll('[data-deshacer]').forEach((b) => { b.onclick = async () => {
+      try {
+        await api('POST', `/exec/pACO_Factura_Cliente_Efecto_CobrarDeshacer/ACO_Factura_Cliente_Efecto?${efectoFiltro(b.dataset.deshacer)}`, { IdFactura: id, IdEfecto: +b.dataset.deshacer });
+        await verFactura(id); msg('ok', `Cobro del efecto ${b.dataset.deshacer} deshecho`);
+      } catch (e) { await verFactura(id); msg('ko', e.message); }
+    }; });
+  } catch (e) { fallo(e); }
+}
+
+ir('pedidos');
+</script>
+</body>
+</html>
