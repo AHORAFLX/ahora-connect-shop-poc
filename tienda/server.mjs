@@ -49,13 +49,17 @@ async function getToken() {
 
 // Llamada genérica. `traza` acumula cada request/response para enseñarla en la demo.
 async function connect(method, path, body, traza) {
-  const res = await fetch(`${CONNECT_URL}/webapi${path}`, {
+  const llamar = async () => fetch(`${CONNECT_URL}/webapi${path}`, {
     method,
     // Accept JSON obligatorio: con XML (lo que pide un navegador) la API falla al serializar NULLs
     headers: { Authorization: `Bearer ${await getToken()}`, 'Content-Type': 'application/json', Accept: 'application/json' },
     // Los procesos (/exec) exigen body aunque esté vacío (si no: HTTP 411)
     body: body === undefined ? undefined : JSON.stringify(body),
   });
+  let res = await llamar();
+  // 401 "Authorization has been denied": el token ya no vale aunque no haya caducado
+  // (p. ej. se reinició el IIS de AHORA Connect). Se pide uno nuevo y se reintenta una vez.
+  if (res.status === 401) { token = null; res = await llamar(); }
   const text = await res.text();
   const data = text ? JSON.parse(text) : null;
   traza?.push({ method, path, body, status: res.status, response: data });
